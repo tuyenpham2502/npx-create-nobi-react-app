@@ -3,7 +3,7 @@
     "version": "1.0.2",
     "description": "Create a React app from Nobi template",
     "bin": {
-        "create-nobi-react-app": "./bin/index.js"
+        "create-nobi-react-app": "bin/index.js"
     },
     "type": "module",
     "files": [
