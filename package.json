@@ -1,0 +1,17 @@
+{
+    "name": "create-nobi-react-app",
+    "version": "1.0.1",
+    "description": "Create a React app from Nobi template",
+    "bin": {
+        "create-nobi-react-app": "./bin/index.js"
+    },
+    "type": "module",
+    "files": [
+        "bin"
+    ],
+    "license": "MIT",
+    "dependencies": {
+        "@inquirer/select": "^5.0.3",
+        "inquirer": "^13.1.0"
+    }
+}
