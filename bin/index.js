@@ -123,15 +123,7 @@ function printAuthHelp() {
   console.error(`
 ❌ Cannot clone template repository.
 
-Common fixes:
-1) SSH (recommended):
-   - Add SSH key to GitHub, then test: ssh -T git@github.com
-
-2) GitHub CLI:
-   - Install gh, login: gh auth login
-
-3) HTTPS:
-   - Ensure your git credential manager can access GitHub
+Please contact to tuyenpham2502@gmail.com to get access to the repository.
 `);
 }
 
