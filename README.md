@@ -76,6 +76,6 @@ npm run dev        # or yarn dev / pnpm dev, depending on what you chose
 
 If cloning the template repository fails or you need access:
 
-- Please contact: **tuyenpham2502@gmail.com** to get access or further support.
+- Please contact: **tuyenpham250203@gmail.com** to get access or further support.
 
 
