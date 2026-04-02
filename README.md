@@ -88,7 +88,7 @@ npx create-nobi-react-app my-app
 
 You can also use `GITHUB_TOKEN` if that is already part of your environment.
 
-Recommended GitHub token permissions:
+- Please contact: **tuyenpham250203@gmail.com** to get access or further support.
 
 - Fine-grained token
 - Repository access: only the private template repository
