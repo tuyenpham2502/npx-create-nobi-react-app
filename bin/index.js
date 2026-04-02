@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { execSync, spawnSync } from "child_process";
 import select from "@inquirer/select";
+import inquirer from "inquirer";
 
 /**
  * CONFIG
@@ -13,6 +14,15 @@ const REPO_HTTPS = "https://github.com/tuyenpham2502/react-base.git";
 function run(bin, args, opts = {}) {
   const r = spawnSync(bin, args, { stdio: "inherit", ...opts });
   if (r.status !== 0) throw new Error(`${bin} ${args.join(" ")} failed`);
+}
+
+function isPromptCancelled(error) {
+  return error?.name === "ExitPromptError" || error?.name === "AbortPromptError";
+}
+
+function exitCancelled() {
+  console.error("\n⚠️ Operation cancelled by user.");
+  process.exit(1);
 }
 
 function ensureNodeVersion() {
@@ -29,15 +39,6 @@ function ensureGitAvailable() {
   } catch {
     console.error("❌ Git is not installed or not in PATH. Please install Git first.");
     process.exit(1);
-  }
-}
-
-function hasCmd(cmd) {
-  try {
-    execSync(`${cmd} --version`, { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
   }
 }
 
@@ -92,15 +93,20 @@ async function choosePackageManager(projectDir) {
     return pm;
   }
 
-  return await select({
-    message: "Choose a package manager:",
-    choices: [
-      { name: "npm", value: "npm" },
-      { name: "yarn", value: "yarn" },
-      { name: "pnpm", value: "pnpm" },
-    ],
-    default: detected || "npm",
-  });
+  try {
+    return await select({
+      message: "Choose a package manager:",
+      choices: [
+        { name: "npm", value: "npm" },
+        { name: "yarn", value: "yarn" },
+        { name: "pnpm", value: "pnpm" },
+      ],
+      default: detected || "npm",
+    });
+  } catch (error) {
+    if (isPromptCancelled(error)) exitCancelled();
+    throw error;
+  }
 }
 
 function installDependencies(pm, cwd) {
@@ -123,13 +129,56 @@ function printAuthHelp() {
   console.error(`
 ❌ Cannot clone template repository.
 
-Please contact to tuyenpham2502@gmail.com to get access to the repository.
+Please provide a valid GitHub token with access to the private template repository.
+
+Please contact to tuyenpham250203@gmail.com if you still need access to the repository.
 `);
 }
 
-function tryClone(repoUrl, projectName) {
-  // no branch hardcode: clone default branch
-  run("git", ["clone", "--depth", "1", "--filter=blob:none", repoUrl, projectName]);
+function tryCloneWithToken(repoUrl, projectName, token) {
+  // GitHub PAT over HTTPS is handled like username/password auth.
+  const basicAuth = Buffer.from(`x-access-token:${token}`, "utf8").toString("base64");
+  run("git", [
+    "-c",
+    `http.extraHeader=Authorization: Basic ${basicAuth}`,
+    "clone",
+    "--depth",
+    "1",
+    "--filter=blob:none",
+    repoUrl,
+    projectName,
+  ]);
+}
+
+async function promptGithubToken() {
+  const envToken = process.env.NOBI_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+
+  if (!process.stdin.isTTY) {
+    if (envToken) return envToken;
+    console.error("❌ A GitHub token is required in non-interactive mode. Set NOBI_GITHUB_TOKEN or GITHUB_TOKEN.");
+    process.exit(1);
+  }
+
+  try {
+    const { token } = await inquirer.prompt([
+      {
+        type: "password",
+        name: "token",
+        message: "Enter your GitHub token to clone the private template:",
+        mask: "*",
+        default: envToken || undefined,
+        validate(value) {
+          if (!value || !value.trim()) return "GitHub token is required.";
+          return true;
+        },
+      },
+    ]);
+
+    return token.trim();
+  } catch (error) {
+    if (isPromptCancelled(error)) exitCancelled();
+    throw error;
+  }
 }
 
 async function main() {
@@ -146,28 +195,14 @@ async function main() {
   ensureDirNotExists(targetDir);
 
   console.log(`🚀 Creating React app: ${projectName}`);
+  const githubToken = await promptGithubToken();
 
-  // 1) Clone template (SSH -> gh -> HTTPS)
+  // 1) Clone template with user token
   try {
-    tryClone(REPO_SSH, projectName);
+    tryCloneWithToken(REPO_HTTPS, projectName, githubToken);
   } catch {
-    try {
-      if (hasCmd("gh")) {
-        // gh repo clone owner/repo <dir>
-        run("gh", ["repo", "clone", "tuyenpham2502/react-base", projectName, "--", "--depth=1"], {
-          cwd: process.cwd(),
-        });
-      } else {
-        throw new Error("gh not available");
-      }
-    } catch {
-      try {
-        tryClone(REPO_HTTPS, projectName);
-      } catch {
-        printAuthHelp();
-        process.exit(1);
-      }
-    }
+    printAuthHelp();
+    process.exit(1);
   }
 
   // 2) Remove git history
@@ -196,4 +231,12 @@ Next steps:
 `);
 }
 
-main();
+main().catch((error) => {
+  if (isPromptCancelled(error)) exitCancelled();
+
+  console.error("\n❌ Unexpected error.");
+  if (error instanceof Error && error.message) {
+    console.error(error.message);
+  }
+  process.exit(1);
+});
