@@ -30,10 +30,9 @@ What happens:
    - Verifies **Git** is installed
 
 2. **Clone template**
-   - Tries to clone via **SSH**: `git@github.com:tuyenpham2502/react-base.git`
-   - If SSH fails and `gh` (GitHub CLI) is available, tries:  
-     `gh repo clone tuyenpham2502/react-base my-app -- --depth=1`
-   - Falls back to **HTTPS**: `https://github.com/tuyenpham2502/react-base.git`
+   - Prompts you for your **GitHub token**
+   - Uses that token to clone the private template repository over **HTTPS**
+   - In non-interactive environments, reads the token from `NOBI_GITHUB_TOKEN` or `GITHUB_TOKEN`
 
 3. **Project setup**
    - Removes the original `.git` folder
@@ -72,10 +71,31 @@ npm run dev        # or yarn dev / pnpm dev, depending on what you chose
 - Access to the GitHub repository `tuyenpham2502/react-base`  
   - If you cannot clone the repository, the CLI will show an error and ask you to contact support.
 
+### Using a private template repository
+
+When you run the CLI locally, it will ask for your GitHub token:
+
+```bash
+npx create-nobi-react-app my-app
+```
+
+If you need to run in CI or another non-interactive environment, export a GitHub token before running the CLI:
+
+```bash
+export NOBI_GITHUB_TOKEN=ghp_xxx
+npx create-nobi-react-app my-app
+```
+
+You can also use `GITHUB_TOKEN` if that is already part of your environment.
+
+Recommended GitHub token permissions:
+
+- Fine-grained token
+- Repository access: only the private template repository
+- Permission: `Contents: Read-only`
+
 ### Troubleshooting & Support
 
 If cloning the template repository fails or you need access:
 
-- Please contact: **tuyenpham2502@gmail.com** to get access or further support.
-
-
+- Please contact: **tuyenpham250203@gmail.com** to get access or further support.
